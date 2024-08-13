@@ -55,38 +55,79 @@ int main() {
     printf("2. Decrypt a file\n");
     printf("3. Exit\n");
     scanf("%d", &userInp);  // get user input
+    fflush(stdin);
 
     switch(userInp) {
       case 0:
         printf("Enter a key of 8-24 bits for cipher generation: ");
         fgets(key, sizeof(key), stdin);
+        // Remove trailing newline character if present
+        key[strcspn(key, "\n")] = '\0';
+        fflush(stdin);
         break;
-        
+
+
       case 1:
-        printf("op 1");
+        printf("Place the file you want encrypted in the directory where this program is located.\n");
         // printf("Select the file you wish to encrypt: ");
 
-        // struct dirent *de;  // Pointer for directory entry   
-        // // opendir() returns a pointer of DIR type.  
-        // DIR *dr = opendir(".");     
-        // if (dr == NULL)  // opendir returns NULL if couldn't open directory 
-        // { 
-        //     printf("Could not open current directory" ); 
-        //     return 0; 
-        // } 
+        struct dirent *de;  // Pointer for directory entry   
+        DIR *dr = opendir(".");     
+        if (dr == NULL)  // opendir returns NULL if couldn't open directory 
+        { 
+            perror("opendir");
+            return EXIT_FAILURE;
+        } 
       
-        // // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html 
-        // // for readdir() 
-        // while ((de = readdir(dr)) != NULL) 
-        //         printf("%s\n", de->d_name); 
-      
-        // closedir(dr); 
+        char chosenFile[124];
+        int files=0, choice=0;
+        printf("Files in the current directory:\n");
+        while ((de = readdir(dr))) {
+            // Skip "." and ".."
+            if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+                printf("%d: %s\n", ++files, de->d_name);
+            }
+        }
+        closedir(dr);
+
+        if (files > 0){
+          printf("Choose a file (by number) to encrypt: ");
+          scanf("%d", &choice);
+          // ensures valid number chosen
+          if (choice < 0 || choice > files){
+            printf("Invalid value. Choose a number shown!\n ");
+            break;
+          }
+
+          dr = opendir(".");
+          if (de == NULL){
+            perror("opendir");
+            return EXIT_FAILURE;
+          }
+          
+          files=0;
+          while ((de = readdir(dr))) {
+            if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+              files++;
+              if (files == choice){
+                strcpy(chosenFile, de->d_name);
+                printf("You have chosen file %s", chosenFile);
+                break;
+              }
+            }
+          }
+        } else {
+          printf("Please place files you want encrypted into directory of program!");
+        }     
         break;
+
 
       case 2:
         printf("op 2");
 
         break;
+
+
       case 3:
         printf("Exiting Program...");
         return 0;
