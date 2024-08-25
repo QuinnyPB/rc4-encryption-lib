@@ -26,8 +26,9 @@ void printbin(int8 *input, const int16 size) {
   return;
 }
 
+
 // take a plaintext file and grab its data
-char* getFileContents(char *buffer, char *filename){
+void getFileContents(char *buffer, char *filename){
   FILE *filePtr;
   long filesize;
 
@@ -35,7 +36,7 @@ char* getFileContents(char *buffer, char *filename){
   filePtr = fopen(filename, "r");
   if (filePtr == NULL){
     fprintf(stderr, "Error opening file\n");
-    return buffer;
+    return;
   }
 
   // Get file size
@@ -48,63 +49,93 @@ char* getFileContents(char *buffer, char *filename){
   if (buffer == NULL){
     fprintf(stderr, "Memory allocation error\n");
     fclose(filePtr);
-    return buffer;
+    return;
   }
 
   // read whole file into buffer
   fread(buffer, 1, filesize, filePtr);
   buffer[filesize] = "\0"; // null terminator for buffer safety
   fclose(filePtr);
-  // printf("Closing file"); F;
-
-  // printf("File contents are: \n%s", buffer); F;
-  return buffer;
 }
 
+
 // take encrypted data and output it to new file
-void outputFileContents(char *buffer, char *filename, long filesize){
+void outputContent(int8 *buffer, char *filename){
   FILE *toFile;
+  long filesize = strlen((char *)buffer);
+
   // char new_filename[] = "encrypted_" + *filename;
-  char new_filename[] = "encrypted_file.txt";
-  toFile = fopen(new_filename, "w");
+  // char new_filename[] = filename;
+
+  toFile = fopen(filename, "w");
   if (toFile == NULL){
     fprintf(stderr, "Could not output contents");
     return;
   }
-  printf("Writing ciphertext to file\n"); F;
+  printf("Writing ciphertext to file '%s'\n", filename); F;
   fwrite(buffer, 1, filesize, toFile);
+
   printf("Closing file\n"); F;
   fclose(toFile);
+
   free(buffer);
   printf("Freeing buffer\n"); F;
-
 }
+
 
 void encryptFile(){
 
 }
 
-void encryptText(){
+// encrypts user input and stores in encrypted argument
+void encryptText(Arcfour *rc4, char *key, int16 *skey, int8 *encrypted, int16* stext){
+  printf("init outputFile()..."); F;
 
+  int8 *decrypted;
+  char plaintext[1024];
+
+  printf("Please enter the text you would like to encrypt:\n"); F;
+
+  if (fgets(plaintext, sizeof(plaintext), stdin) != NULL){
+    stext = strlen(plaintext);
+    encrypted = rc4encrypt(rc4, (int8 *)plaintext, stext);
+    printbin(encrypted, stext);  F;    
+    rc4uninit(rc4);
+
+    // printf("Initializing decryption..."); F;
+    // rc4 = rc4init((int8 *)key, skey); // check if rc4 returns 0, in such a case malloc returns an error
+    // printf("done\n");
+
+    // decrypted = rc4encrypt(rc4, encrypted, stext);
+    // printf(" ->'%s'", decrypted);
+    // rc4uninit(rc4);
+  } else {
+    printf("Error getting user input!\n"); F;
+  }  
+  return;
 }
+
 
 void decryptFile(){
 
 }
 
+
 void decrpytText(){
   
 }
+
 
 int main() {
   Arcfour *rc4;
   int16 skey, stext;
   // char *key, *from;
   // char *key;
-  int8 *encrypted, *decrypted;
-  char from[1024];
+  int8 *encrypted;
+  // int8 *decrypted;
+  // char from[1024];
   char key[24] = "default_key";
-
+  skey = strlen(key);
   // static declaration
 
   // dynamic declaration
@@ -139,6 +170,7 @@ int main() {
         key[strcspn(key, "\n")] = '\0';
         fflush(stdin); F;
         break;
+
 
       // encrypt a file
       case 1:
@@ -190,8 +222,8 @@ int main() {
               if (files == choice){
                 strcpy(chosenFile, de->d_name);
                 printf("You have chosen file %s\n", chosenFile); F;
-                buffer = getFileContents(buffer, chosenFile);
-                stext = strlen(buffer);
+                getFileContents(buffer, chosenFile);
+                // stext = strlen(buffer);
                 printf("%s\n",buffer); F;
 
                 printf("Initializing encryption...\n"); F;
@@ -201,7 +233,8 @@ int main() {
                 // printf("'%s' \n ->", from);
                 encrypted = rc4encrypt(rc4, (int8 *)buffer, stext);
                 printbin(encrypted, stext);  
-                outputFileContents(encrypted, chosenFile, stext);
+                outputContent(encrypted, "encrypted_file.txt"); // temp
+                // outputContent(encrypted, chosenFile);
                 rc4uninit(rc4);
 
                 break;
@@ -213,23 +246,35 @@ int main() {
         }     
         break;
 
+
       // Decrypt a File
       case 2:
         printf("Decrypt a file...");
 
         break;
 
+
       // Encrypt some user text
       case 3:
-        printf("Encrypt text...");
-        return 0;
+        printf("init rc4..."); F;
+        rc4 = rc4init((int8 *)key, skey);
+        printf("init encryptText()...\n"); F;
+        encryptText(rc4, key, skey, encrypted, stext); // sets encrypted to new value
+        // printbin(encrypted, stext);  
+
+        // printf("init outputFile()...\n"); F;
+        // outputContent(encrypted, "encrypted.txt");
+        // printf("init rc4unit()..."); F;
+        rc4uninit(rc4);
         break;
+
 
       // Decrypt some user text
       case 4:
         printf("Decrypt text...");
         return 0;
         break;
+
 
       // Exit program
       case 5:
