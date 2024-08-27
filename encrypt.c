@@ -98,16 +98,20 @@ void encryptText(Arcfour *rc4, char *key, int16 *skey, int8 *encrypted, int16* s
 
   if (fgets(plaintext, sizeof(plaintext), stdin) != NULL){
     stext = strlen(plaintext);
-    encrypted = rc4encrypt(rc4, (int8 *)plaintext, stext);
+    printf("\n%i\n",stext); F;
+    encrypted = rc4encrypt(rc4, (int8 *)plaintext, 5);
+    printf("Size of plaintext: %d\n", stext); F;
+    printf("Encrypted text:\n "); F;
     printbin(encrypted, stext);  F;    
-    rc4uninit(rc4);
+    printf("For decryption purposes, remember the size of the original text!\n"); F;
+    // rc4uninit(rc4);
 
     // printf("Initializing decryption..."); F;
     // rc4 = rc4init((int8 *)key, skey); // check if rc4 returns 0, in such a case malloc returns an error
     // printf("done\n");
 
     // decrypted = rc4encrypt(rc4, encrypted, stext);
-    // printf(" ->'%s'", decrypted);
+    // printf("->'%s'", decrypted);
     // rc4uninit(rc4);
   } else {
     printf("Error getting user input!\n"); F;
@@ -117,12 +121,31 @@ void encryptText(Arcfour *rc4, char *key, int16 *skey, int8 *encrypted, int16* s
 
 
 void decryptFile(){
-
+  
 }
 
 
-void decrpytText(){
+void decryptText(Arcfour *rc4, char *key){
+  int8 *ciphertext, *decrypted;
+  int size;
   
+  printf("What was the size of the original text?: \n"); F;
+  if (fgets(size, sizeof(size), stdin) != NULL){
+    printf("Using parameters: key=%s, size=%i\n", key, size); F;
+  } else {
+    printf("Could not use that input!\n"); F;
+    return;
+  }
+
+  printf("Please copy and paste the encrypted text here: \n"); F;
+  if (fgets(ciphertext, sizeof(ciphertext), stdin) != NULL){
+    printf("Now decrypting...\n"); F;
+    decrypted = rc4encrypt(rc4, ciphertext, size);
+    printbin(decrypted, size);    
+  } else {
+    printf("Could not use that input!\n"); F;
+    return;
+  }
 }
 
 
@@ -249,8 +272,9 @@ int main() {
 
       // Decrypt a File
       case 2:
-        printf("Decrypt a file...");
-
+        printf("Decrypting a file..."); F;
+        printf("NOTE: If the decrypted text is gibberish, than you have used the wrong key! Go back and set the key to what was used to decrypt..."); F;
+        
         break;
 
 
@@ -271,7 +295,10 @@ int main() {
 
       // Decrypt some user text
       case 4:
-        printf("Decrypt text...");
+        printf("Decrypt text...\n");
+        rc4 = rc4init((int8 *)key, skey); // check if rc4 returns
+        decryptText(rc4, key);
+        rc4uninit(rc4);
         return 0;
         break;
 
